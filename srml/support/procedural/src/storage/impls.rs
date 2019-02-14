@@ -17,7 +17,7 @@
 use proc_macro2::TokenStream as TokenStream2;
 use syn;
 use quote::quote;
-use crate::storage::transformation::DeclStorageTypeInfos;
+use crate::storage::transformation::{DeclStorageTypeInfos, InstanceOpts};
 
 pub fn option_unwrap(is_option: bool) -> TokenStream2 {
 	if !is_option {
@@ -34,8 +34,7 @@ pub(crate) struct Impls<'a> {
 	pub visibility: &'a syn::Visibility,
 	pub traitinstance: &'a syn::Ident,
 	pub traittype: &'a syn::TypeParamBound,
-	pub instance: &'a Option<syn::Ident>,
-	pub default_instance: &'a Option<syn::Ident>,
+	pub instance_opts: &'a InstanceOpts,
 	pub type_infos: DeclStorageTypeInfos<'a>,
 	pub fielddefault: TokenStream2,
 	pub prefix: String,
@@ -49,8 +48,7 @@ impl<'a> Impls<'a> {
 			visibility,
 			traitinstance,
 			traittype,
-			instance,
-			default_instance,
+			instance_opts,
 			type_infos,
 			fielddefault,
 			prefix,
@@ -72,14 +70,18 @@ impl<'a> Impls<'a> {
 			}
 		};
 
-		let comma_instance = instance.clone().map(|i| quote!{, #i});
-		let equal_default_instance = default_instance.clone().map(|i| quote!{ = #i});
-		let bound_instance = instance.clone().map(|_| quote!{ : Instantiable});
+		let InstanceOpts {
+			comma_instance,
+			equal_default_instance,
+			bound_instantiable,
+			instance,
+			..
+		} = instance_opts;
 
+		// TODO TODO: factorize
 		let final_prefix = if let Some(instance) = instance {
 			let method_name = syn::Ident::new(&format!("build_prefix_once_for_{}", name.to_string()), proc_macro2::Span::call_site());
 			quote!{ #instance::#method_name(#prefix.as_bytes()) }
-			// quote!{ #prefix.as_bytes() }
 		} else {
 			quote!{ #prefix.as_bytes() }
 		};
@@ -87,9 +89,9 @@ impl<'a> Impls<'a> {
 		// generator for value
 		quote!{
 
-			#visibility struct #name<#traitinstance: #traittype, #instance #bound_instance #equal_default_instance>(#scrate::storage::generator::PhantomData<(#traitinstance #comma_instance)>);
+			#visibility struct #name<#traitinstance: #traittype, #instance #bound_instantiable #equal_default_instance>(#scrate::storage::generator::PhantomData<(#traitinstance #comma_instance)>);
 
-			impl<#traitinstance: #traittype, #instance #bound_instance> #scrate::storage::generator::StorageValue<#typ> for #name<#traitinstance, #instance> {
+			impl<#traitinstance: #traittype, #instance #bound_instantiable> #scrate::storage::generator::StorageValue<#typ> for #name<#traitinstance, #instance> {
 				type Query = #value_type;
 
 				/// Get the storage key.
@@ -128,8 +130,7 @@ impl<'a> Impls<'a> {
 			visibility,
 			traitinstance,
 			traittype,
-			instance,
-			default_instance,
+			instance_opts,
 			type_infos,
 			fielddefault,
 			prefix,
@@ -151,25 +152,27 @@ impl<'a> Impls<'a> {
 			}
 		};
 
-		// TODO TODO: factorize
-		let comma_instance = instance.clone().map(|i| quote!{, #i});
-		let equal_default_instance = default_instance.clone().map(|i| quote!{ = #i});
-		let bound_instance = instance.clone().map(|_| quote!{ : Instantiable});
+		let InstanceOpts {
+			comma_instance,
+			equal_default_instance,
+			bound_instantiable,
+			instance,
+			..
+		} = instance_opts;
 
 		// TODO TODO: factorize
 		let final_prefix = if let Some(instance) = instance {
 			let method_name = syn::Ident::new(&format!("build_prefix_once_for_{}", name.to_string()), proc_macro2::Span::call_site());
 			quote!{ #instance::#method_name(#prefix.as_bytes()) }
-			// quote!{ #prefix.as_bytes() }
 		} else {
 			quote!{ #prefix.as_bytes() }
 		};
 
 		// generator for map
 		quote!{
-			#visibility struct #name<#traitinstance: #traittype, #instance #bound_instance #equal_default_instance>(#scrate::storage::generator::PhantomData<(#traitinstance #comma_instance)>);
+			#visibility struct #name<#traitinstance: #traittype, #instance #bound_instantiable #equal_default_instance>(#scrate::storage::generator::PhantomData<(#traitinstance #comma_instance)>);
 
-			impl<#traitinstance: #traittype, #instance #bound_instance> #scrate::storage::generator::StorageMap<#kty, #typ> for #name<#traitinstance, #instance> {
+			impl<#traitinstance: #traittype, #instance #bound_instantiable> #scrate::storage::generator::StorageMap<#kty, #typ> for #name<#traitinstance, #instance> {
 				type Query = #value_type;
 
 				/// Get the prefix key in storage.
@@ -216,8 +219,7 @@ impl<'a> Impls<'a> {
 			visibility,
 			traitinstance,
 			traittype,
-			instance,
-			default_instance,
+			instance_opts,
 			type_infos,
 			fielddefault,
 			prefix,
@@ -251,9 +253,13 @@ impl<'a> Impls<'a> {
 			}
 		};
 
-		let comma_instance = instance.clone().map(|i| quote!{, #i});
-		let equal_default_instance = default_instance.clone().map(|i| quote!{ = #i});
-		let bound_instance = instance.clone().map(|_| quote!{ : Instantiable});
+		let InstanceOpts {
+			comma_instance,
+			equal_default_instance,
+			bound_instantiable,
+			instance,
+			..
+		} = instance_opts;
 
 		// TODO TODO: is logic OK with instance ????
 		// TODO TODO: test this with instance
@@ -395,9 +401,9 @@ impl<'a> Impls<'a> {
 				key_for
 			}
 
-			#visibility struct #name<#traitinstance: #traittype, #instance #bound_instance #equal_default_instance>(#scrate::storage::generator::PhantomData<(#traitinstance #comma_instance)>);
+			#visibility struct #name<#traitinstance: #traittype, #instance #bound_instantiable #equal_default_instance>(#scrate::storage::generator::PhantomData<(#traitinstance #comma_instance)>);
 
-			impl<#traitinstance: #traittype, #instance #bound_instance> #scrate::storage::generator::StorageMap<#kty, #typ> for #name<#traitinstance, #instance> {
+			impl<#traitinstance: #traittype, #instance #bound_instantiable> #scrate::storage::generator::StorageMap<#kty, #typ> for #name<#traitinstance, #instance> {
 				type Query = #value_type;
 
 				/// Get the prefix key in storage.
@@ -457,7 +463,7 @@ impl<'a> Impls<'a> {
 				}
 			}
 
-			impl<#traitinstance: #traittype, #instance #bound_instance> #scrate::storage::generator::EnumerableStorageMap<#kty, #typ> for #name<#traitinstance, #instance> {
+			impl<#traitinstance: #traittype, #instance #bound_instantiable> #scrate::storage::generator::EnumerableStorageMap<#kty, #typ> for #name<#traitinstance, #instance> {
 				fn head<S: #scrate::GenericStorage>(storage: &S) -> Option<#kty> {
 					self::#internal_module::#linkage::read_head(storage)
 				}

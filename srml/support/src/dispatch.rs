@@ -96,6 +96,8 @@ impl<T> Parameter for T where T: Codec + Clone + Eq {}
 macro_rules! decl_module {
 	// TODO TODO: because now instantiable is build in decl_storage and also default instance we should think about macro UX differently
 	//
+	// TODO TODO: make Instantiable an actual ident not a hard coded one, same in event?
+	//
 	// TODO TODO: what kind of genericity should we allow: ungeneric trait and generic module,
 	// generic trait and generic module. Or only generic trait and generic module
 	
