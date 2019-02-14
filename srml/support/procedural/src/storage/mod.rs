@@ -28,6 +28,9 @@ mod impls;
 
 pub mod transformation;
 
+// TODO TODO: make Option together to make sense!
+// TODO TODO: check that T<Instance>, Instance both instance ident are the same
+// TODO TODO: make path instead of ident for default instance
 /// Parsing usage only
 #[derive(Parse, ToTokens, Debug)]
 struct StorageDefinition {
@@ -39,13 +42,20 @@ struct StorageDefinition {
 	pub module_ident: Ident,
 	pub mod_lt_token: Token![<],
 	pub mod_param: syn::GenericParam,
+	pub mod_instance_param_token: Option<Token![,]>,
+	pub mod_instance: Option<syn::Ident>,
+	// TODO TODO make it not optional when instance is some
+	pub mod_instanciable_token: Option<Token![:]>,
+	// TODO TODO this is a token named instantiable
+	pub mod_instanciable: Option<syn::Ident>,
+	pub mod_instance_equal_token: Option<Token![=]>,
+	pub mod_instance_default_path: Option<syn::Ident>,
 	pub mod_gt_token: Token![>],
 	pub as_token: Token![as],
 	pub crate_ident: Ident,
 	pub content: ext::Braces<ext::Punctuated<DeclStorageLine, Token![;]>>,
 	pub extra_genesis: Option<AddExtraGenesis>,
 }
-
 
 #[derive(Parse, ToTokens, Debug)]
 struct SpecificHiddenCrate {

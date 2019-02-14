@@ -171,6 +171,7 @@ impl ExtBuilder {
 				transfer_fee: self.transfer_fee,
 				creation_fee: self.creation_fee,
 				vesting: vec![],
+				_genesis_phantom_data: rstd::marker::PhantomData,
 			}
 			.build_storage()
 			.unwrap()

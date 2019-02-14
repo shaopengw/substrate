@@ -97,6 +97,7 @@ fn testnet_genesis(initial_authorities: Vec<Ed25519AuthorityId>, endowed_account
 			creation_fee: 0,
 			balances: endowed_accounts.iter().map(|&k|(k, (1 << 60))).collect(),
 			vesting: vec![],
+			_genesis_phantom_data: std::marker::PhantomData,
 		}),
 		sudo: Some(SudoConfig {
 			key: root_key,

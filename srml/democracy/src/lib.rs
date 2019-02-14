@@ -492,6 +492,7 @@ mod tests {
 			transfer_fee: 0,
 			creation_fee: 0,
 			vesting: vec![],
+			_genesis_phantom_data: rstd::marker::PhantomData,
 		}.build_storage().unwrap().0);
 		t.extend(GenesisConfig::<Test>{
 			launch_period: 1,

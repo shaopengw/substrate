@@ -70,6 +70,7 @@ fn staging_testnet_config_genesis() -> GenesisConfig {
 			transfer_fee: 1 * CENTS,
 			creation_fee: 1 * CENTS,
 			vesting: vec![],
+			_genesis_phantom_data: std::marker::PhantomData,
 		}),
 		indices: Some(IndicesConfig {
 			ids: endowed_accounts.clone(),
@@ -199,6 +200,7 @@ pub fn testnet_genesis(
 			creation_fee: 0,
 			balances: endowed_accounts.iter().map(|&k| (k.into(), (1 << 60))).collect(),
 			vesting: vec![],
+			_genesis_phantom_data: std::marker::PhantomData,
 		}),
 		session: Some(SessionConfig {
 			validators: initial_authorities.iter().cloned().map(Into::into).collect(),

@@ -272,6 +272,7 @@ mod tests {
 				transfer_fee: 0,
 				creation_fee: 0,
 				vesting: vec![],
+				_genesis_phantom_data: std::marker::PhantomData,
 			}),
 			session: Some(SessionConfig {
 				session_length: 2,

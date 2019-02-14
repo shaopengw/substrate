@@ -34,6 +34,8 @@ pub(crate) struct Impls<'a> {
 	pub visibility: &'a syn::Visibility,
 	pub traitinstance: &'a syn::Ident,
 	pub traittype: &'a syn::TypeParamBound,
+	pub instance: &'a Option<syn::Ident>,
+	pub default_instance: &'a Option<syn::Ident>,
 	pub type_infos: DeclStorageTypeInfos<'a>,
 	pub fielddefault: TokenStream2,
 	pub prefix: String,
@@ -47,6 +49,8 @@ impl<'a> Impls<'a> {
 			visibility,
 			traitinstance,
 			traittype,
+			instance,
+			default_instance,
 			type_infos,
 			fielddefault,
 			prefix,
@@ -68,17 +72,29 @@ impl<'a> Impls<'a> {
 			}
 		};
 
+		let comma_instance = instance.clone().map(|i| quote!{, #i});
+		let equal_default_instance = default_instance.clone().map(|i| quote!{ = #i});
+		let bound_instance = instance.clone().map(|_| quote!{ : Instantiable});
+
+		let final_prefix = if let Some(instance) = instance {
+			let method_name = syn::Ident::new(&format!("build_prefix_once_for_{}", name.to_string()), proc_macro2::Span::call_site());
+			quote!{ #instance::#method_name(#prefix.as_bytes()) }
+			// quote!{ #prefix.as_bytes() }
+		} else {
+			quote!{ #prefix.as_bytes() }
+		};
+
 		// generator for value
 		quote!{
 
-			#visibility struct #name<#traitinstance: #traittype>(#scrate::storage::generator::PhantomData<#traitinstance>);
+			#visibility struct #name<#traitinstance: #traittype, #instance #bound_instance #equal_default_instance>(#scrate::storage::generator::PhantomData<(#traitinstance #comma_instance)>);
 
-			impl<#traitinstance: #traittype> #scrate::storage::generator::StorageValue<#typ> for #name<#traitinstance> {
+			impl<#traitinstance: #traittype, #instance #bound_instance> #scrate::storage::generator::StorageValue<#typ> for #name<#traitinstance, #instance> {
 				type Query = #value_type;
 
 				/// Get the storage key.
 				fn key() -> &'static [u8] {
-					#prefix.as_bytes()
+					#final_prefix
 				}
 
 				/// Load the value from the provided storage instance.
@@ -112,6 +128,8 @@ impl<'a> Impls<'a> {
 			visibility,
 			traitinstance,
 			traittype,
+			instance,
+			default_instance,
 			type_infos,
 			fielddefault,
 			prefix,
@@ -132,16 +150,31 @@ impl<'a> Impls<'a> {
 				}
 			}
 		};
+
+		// TODO TODO: factorize
+		let comma_instance = instance.clone().map(|i| quote!{, #i});
+		let equal_default_instance = default_instance.clone().map(|i| quote!{ = #i});
+		let bound_instance = instance.clone().map(|_| quote!{ : Instantiable});
+
+		// TODO TODO: factorize
+		let final_prefix = if let Some(instance) = instance {
+			let method_name = syn::Ident::new(&format!("build_prefix_once_for_{}", name.to_string()), proc_macro2::Span::call_site());
+			quote!{ #instance::#method_name(#prefix.as_bytes()) }
+			// quote!{ #prefix.as_bytes() }
+		} else {
+			quote!{ #prefix.as_bytes() }
+		};
+
 		// generator for map
 		quote!{
-			#visibility struct #name<#traitinstance: #traittype>(#scrate::storage::generator::PhantomData<#traitinstance>);
+			#visibility struct #name<#traitinstance: #traittype, #instance #bound_instance #equal_default_instance>(#scrate::storage::generator::PhantomData<(#traitinstance #comma_instance)>);
 
-			impl<#traitinstance: #traittype> #scrate::storage::generator::StorageMap<#kty, #typ> for #name<#traitinstance> {
+			impl<#traitinstance: #traittype, #instance #bound_instance> #scrate::storage::generator::StorageMap<#kty, #typ> for #name<#traitinstance, #instance> {
 				type Query = #value_type;
 
 				/// Get the prefix key in storage.
 				fn prefix() -> &'static [u8] {
-					#prefix.as_bytes()
+					#final_prefix
 				}
 
 				/// Get the storage key used to fetch a value corresponding to a specific key.
@@ -176,12 +209,15 @@ impl<'a> Impls<'a> {
 		}
 	}
 
+	// TODO TODO: do prefix for linked_map
 	pub fn linked_map(self, kty: &syn::Type) -> TokenStream2 {
 		let Self {
 			scrate,
 			visibility,
 			traitinstance,
 			traittype,
+			instance,
+			default_instance,
 			type_infos,
 			fielddefault,
 			prefix,
@@ -214,6 +250,13 @@ impl<'a> Impls<'a> {
 				}
 			}
 		};
+
+		let comma_instance = instance.clone().map(|i| quote!{, #i});
+		let equal_default_instance = default_instance.clone().map(|i| quote!{ = #i});
+		let bound_instance = instance.clone().map(|_| quote!{ : Instantiable});
+
+		// TODO TODO: is logic OK with instance ????
+		// TODO TODO: test this with instance
 
 		// generator for linked map
 		quote! {
@@ -343,15 +386,18 @@ impl<'a> Impls<'a> {
 				}
 			}
 
+			// TODO TODO: this function must include instance in a way
+			// a possibility is to make it with a generic param instance
+			// and same linkage would take a generic param instance
 			fn #key_for(key: &#kty) -> #scrate::rstd::vec::Vec<u8> {
 				let mut key_for = #prefix.as_bytes().to_vec();
 				#scrate::codec::Encode::encode_to(&key, &mut key_for);
 				key_for
 			}
 
-			#visibility struct #name<#traitinstance: #traittype>(#scrate::storage::generator::PhantomData<#traitinstance>);
+			#visibility struct #name<#traitinstance: #traittype, #instance #bound_instance #equal_default_instance>(#scrate::storage::generator::PhantomData<(#traitinstance #comma_instance)>);
 
-			impl<#traitinstance: #traittype> #scrate::storage::generator::StorageMap<#kty, #typ> for #name<#traitinstance> {
+			impl<#traitinstance: #traittype, #instance #bound_instance> #scrate::storage::generator::StorageMap<#kty, #typ> for #name<#traitinstance, #instance> {
 				type Query = #value_type;
 
 				/// Get the prefix key in storage.
@@ -411,7 +457,7 @@ impl<'a> Impls<'a> {
 				}
 			}
 
-			impl<#traitinstance: #traittype> #scrate::storage::generator::EnumerableStorageMap<#kty, #typ> for #name<#traitinstance> {
+			impl<#traitinstance: #traittype, #instance #bound_instance> #scrate::storage::generator::EnumerableStorageMap<#kty, #typ> for #name<#traitinstance, #instance> {
 				fn head<S: #scrate::GenericStorage>(storage: &S) -> Option<#kty> {
 					self::#internal_module::#linkage::read_head(storage)
 				}

@@ -309,6 +309,7 @@ mod tests {
 			creation_fee: 0,
 			existential_deposit: 0,
 			vesting: vec![],
+			_genesis_phantom_data: rstd::marker::PhantomData,
 		}.build_storage().unwrap().0);
 		t.extend(GenesisConfig::<Test>{
 			proposal_bond: Permill::from_percent(5),
