@@ -156,6 +156,7 @@ decl_storage! {
 		pub ReservedBalance get(reserved_balance): map T::AccountId => T::Balance;
 
 
+		Dummy2: linked_map T::Balance => T::Balance;
 		// Payment stuff.
 
 		/// The fee to be paid for making a transaction; the base.

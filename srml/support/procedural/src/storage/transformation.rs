@@ -450,16 +450,20 @@ fn decl_storage_items(
 	} = instance_opts;
 
 	// Build Instantiable trait
-	// TODO TODO: still do linked_map
 	if instance.is_some() {
 		let mut method_defs = TokenStream2::new();
 		let mut method_impls = TokenStream2::new();
 		for sline in storage_lines.inner.iter() {
 			let DeclStorageLine {
+				storage_type,
 				name,
 				..
 			} = sline;
+
+			let type_infos = get_type_infos(storage_type);
+
 			let method_name = syn::Ident::new(&format!("build_prefix_once_for_{}", name.to_string()), proc_macro2::Span::call_site());
+
 			method_defs.extend(quote!{ fn #method_name(suffix: &'static [u8]) -> &'static [u8]; });
 			method_impls.extend(quote!{
 				fn #method_name(suffix: &'static [u8]) -> &'static [u8] {
@@ -472,6 +476,25 @@ fn decl_storage_items(
 					})
 				}
 			});
+
+			// TODO TODO: maybe factorize but actually fine.
+			if let DeclStorageTypeInfosKind::Map { is_linked: true, .. } = type_infos.kind {
+				let method_name = syn::Ident::new(&format!("build_head_key_once_for_{}", name.to_string()), proc_macro2::Span::call_site());
+
+				method_defs.extend(quote!{ fn #method_name(suffix: &'static [u8]) -> &'static [u8]; });
+				method_impls.extend(quote!{
+					fn #method_name(suffix: &'static [u8]) -> &'static [u8] {
+						static LAZY: #scrate::lazy::Lazy<Vec<u8>> = #scrate::lazy::Lazy::INIT;
+						LAZY.get(|| {
+							let mut final_prefix = Vec::new();
+							final_prefix.extend_from_slice("head of ".as_bytes());
+							final_prefix.extend_from_slice(suffix);
+							final_prefix.extend_from_slice(Self::PREFIX.as_bytes());
+							final_prefix
+						})
+					}
+				});
+			}
 		}
 
 		impls.extend(quote! {
@@ -509,6 +532,7 @@ fn decl_storage_items(
 		let i = impls::Impls {
 			scrate,
 			visibility,
+			cratename,
 			traitinstance,
 			traittype,
 			instance_opts,
