@@ -93,10 +93,7 @@ pub use srml_metadata::{EventMetadata, DecodeDifferent, OuterEventMetadata, FnEn
 macro_rules! decl_event {
 	(
 		$(#[$attr:meta])*
-		// TODO TODO: maybe check that instance is really Instance. well no it can be named
-		// whatever
-// TODO TODO  does instantiable makes sense as it is not actually used
-		pub enum Event<$evt_generic_param:ident $(, $instance:ident: Instantiable $( = $event_default_instance:path)? )?> where
+		pub enum Event<$evt_generic_param:ident $(, $instance:ident $(: $instantiable:ident)? $( = $event_default_instance:path)? )?> where
 			$( $tt:tt )*
 	) => {
 		$crate::__decl_generic_event!(
