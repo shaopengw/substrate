@@ -94,17 +94,13 @@ impl<T> Parameter for T where T: Codec + Clone + Eq {}
 /// parameters, or one parameter, which has the runtime's block number type.
 #[macro_export]
 macro_rules! decl_module {
-	// TODO TODO: because now instantiable is build in decl_storage and also default instance we should think about macro UX differently
-	//
-	// TODO TODO: make Instantiable an actual ident not a hard coded one, same in event?
+	// TODO TODO: make Instantiable an actual ident not a hard coded one
 	//
 	// TODO TODO: what kind of genericity should we allow: ungeneric trait and generic module,
 	// generic trait and generic module. Or only generic trait and generic module
 	
-	// TODO TODO: Instantiable might be a path if the user want to declare its trait elsewhere
-	// maybe not because Instantiable may actually be defined by decl_storage. Which would ensure
-	// that user don't declare this trait and use it with multiple module (which would completely
-	// break because of static
+	// TODO TODO: Instantiable might be a path if decl_storage is declared in another module. But
+	// currently I don't think handle that. However still it might be in the future.
 	(
 		$(#[$attr:meta])*
 		// TODO TODO: does this works if no default is put I mean is it expanded correctly ?
