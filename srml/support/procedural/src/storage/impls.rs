@@ -182,7 +182,7 @@ impl<'a> Impls<'a> {
 
 				/// Get the storage key used to fetch a value corresponding to a specific key.
 				fn key_for(x: &#kty) -> #scrate::rstd::vec::Vec<u8> {
-					let mut key = #prefix.as_bytes().to_vec();
+					let mut key = <Self as #scrate::storage::generator::StorageMap<#kty, #typ>>::prefix().to_vec();
 					#scrate::codec::Encode::encode_to(x, &mut key);
 					key
 				}
